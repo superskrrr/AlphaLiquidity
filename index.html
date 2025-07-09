@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BR-USDT 实时流动性 | 币安 Alpha</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+      --container-bg: rgba(255,255,255,0.07);
+      --container-border: rgba(255,255,255,0.18);
+      --text-main: #fff;
+      --text-sub: #e0e0e0;
+      --title-gradient: linear-gradient(90deg, #00c6fb 0%, #005bea 100%);
+      --liquidity-bg: rgba(0,198,251,0.12);
+      --liquidity-label: #b2eaff;
+      --liquidity-value: #00c6fb;
+      --footer: #b2eaff;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      font-family: 'Inter', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      transition: background 0.5s, color 0.5s;
+    }
+    .container {
+      background: var(--container-bg);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      backdrop-filter: blur(8px);
+      border-radius: 32px;
+      padding: 48px 36px 36px 36px;
+      min-width: 350px;
+      max-width: 400px;
+      text-align: center;
+      border: 1.5px solid var(--container-border);
+      color: var(--text-main);
+      transition: background 0.5s, color 0.5s, border 0.5s;
+    }
+    .title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      background: var(--title-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--text-sub);
+      margin-bottom: 32px;
+    }
+    .liquidity-box {
+      position: relative;
+      margin-bottom: 24px;
+      border-radius: 28px;
+      padding: 32px 18px 24px 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(0,198,251,0.10) 100%);
+      box-shadow:
+        0 8px 32px 0 rgba(31, 38, 135, 0.18),
+        0 1.5px 8px 0 rgba(0,198,251,0.10) inset,
+        0 0.5px 0.5px 0 rgba(255,255,255,0.18) inset;
+      backdrop-filter: blur(18px) saturate(1.5);
+      border: 1.5px solid rgba(255,255,255,0.22);
+      overflow: hidden;
+      transition: box-shadow 0.3s, background 0.3s, border 0.3s;
+    }
+    .liquidity-box::before {
+      content: '';
+      position: absolute;
+      left: 10%;
+      top: 0;
+      width: 80%;
+      height: 32%;
+      background: radial-gradient(ellipse at top, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.01) 100%);
+      filter: blur(6px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .liquidity-box::after {
+      content: '';
+      position: absolute;
+      right: 10%;
+      bottom: 10%;
+      width: 32px;
+      height: 32px;
+      background: radial-gradient(circle, rgba(0,198,251,0.10) 0%, rgba(255,255,255,0.01) 80%);
+      filter: blur(4px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .refresh-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 10;
+      background: rgba(255,255,255,0.18);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    }
+    .refresh-btn:hover {
+      background: rgba(0,198,251,0.18);
+      box-shadow: 0 4px 16px 0 rgba(0,198,251,0.10);
+    }
+    .liquidity-row {
+      position: relative;
+      z-index: 2;
+      background: rgba(255,255,255,0.10);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 1.5px 8px 0 rgba(0,198,251,0.04) inset;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .liquidity-row:last-child {
+      margin-bottom: 0;
+    }
+    .liquidity-row:hover {
+      background: rgba(0,198,251,0.13);
+    }
+    .liquidity-refresh-tip {
+      margin-top: 14px;
+      z-index: 2;
+      position: relative;
+    }
+    .token-icon {
+      font-size: 1.15rem;
+      margin-right: 2px;
+      display: inline-block;
+    }
+    .liquidity-label {
+      font-size: 0.98rem;
+      font-weight: 600;
+      min-width: 70px;
+    }
+    .liquidity-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-left: 8px;
+      letter-spacing: 0.5px;
+      transition: color 0.2s;
+    }
+    .br-label, .br-value { color: #ffb300; }
+    .usdt-label, .usdt-value { color: #26d07c; }
+    .token-icon.br { color: #ffb300; }
+    .token-icon.usdt { color: #26d07c; }
+    .token-icon.price { color: #00c6fb; }
+    .token-icon.total { color: #7c3aed; }
+    .price-label, .price-value { color: #00c6fb; }
+    .total-label, .total-value { color: #00bfae; }
+    .footer {
+      margin-top: 18px;
+      font-size: 0.95rem;
+      color: var(--footer);
+      opacity: 0.7;
+    }
+    .refreshing {
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    /* 夜间模式 */
+    body.light {
+      --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2eafc 100%);
+      --container-bg: rgba(255,255,255,0.92);
+      --container-border: rgba(0,0,0,0.06);
+      --text-main: #1a2138;
+      --text-sub: #5a6a8e;
+      --title-gradient: linear-gradient(90deg, #005bea 0%, #00c6fb 100%);
+      --liquidity-bg: rgba(0,198,251,0.07);
+      --liquidity-label: #005bea;
+      --liquidity-value: #005bea;
+      --footer: #5a6a8e;
+    }
+    /* 切换按钮样式 */
+    .theme-toggle {
+      position: fixed;
+      top: 32px;
+      right: 40px;
+      z-index: 100;
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s, box-shadow 0.3s;
+      border: none;
+      outline: none;
+      font-size: 1.6rem;
+      user-select: none;
+    }
+    .theme-toggle:hover {
+      background: rgba(0,198,251,0.18);
+      box-shadow: 0 4px 16px 0 rgba(0,198,251,0.10);
+    }
+    .theme-toggle .icon {
+      transition: transform 0.4s;
+    }
+    body.light .theme-toggle {
+      background: rgba(0,198,251,0.10);
+    }
+    @media (max-width: 600px) {
+      .container {
+        min-width: 0;
+        max-width: 98vw;
+        padding: 32px 8vw 24px 8vw;
+        border-radius: 18px;
+      }
+      .title {
+        font-size: 1.4rem;
+      }
+      .subtitle {
+        font-size: 0.98rem;
+      }
+      .liquidity-box {
+        padding: 18px 4vw 12px 4vw;
+        border-radius: 16px;
+      }
+      .liquidity-row {
+        border-radius: 10px;
+        padding: 7px 7px;
+      }
+      .refresh-btn {
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+      }
+      .liquidity-value {
+        font-size: 1.6rem;
+      }
+      .liquidity-label, .liquidity-unit {
+        font-size: 0.98rem;
+      }
+      .footer {
+        font-size: 0.85rem;
+      }
+      .theme-toggle {
+        top: 12px;
+        right: 12px;
+        width: 38px;
+        height: 38px;
+        font-size: 1.2rem;
+      }
+      .liquidity-label { font-size: 0.88rem; }
+      .liquidity-value { font-size: 0.98rem; }
+      .token-icon { font-size: 1rem; }
+      .refresh-btn { width: 26px; height: 26px; font-size: 1rem; }
+      .liquidity-refresh-tip { font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle" id="theme-toggle" title="切换白天/黑夜模式">
+    <span class="icon" id="theme-icon">🌙</span>
+  </div>
+  <div class="container">
+    <div class="title">BR-USDT 流动性</div>
+    <div class="subtitle">币安 Alpha 交易对实时流动性展示</div>
+    <div class="liquidity-box">
+      <button class="refresh-btn" id="refresh-btn" title="手动刷新">🔄</button>
+      <div class="liquidity-row">
+        <span class="token-icon br">🪙</span>
+        <span class="liquidity-label br-label">BR 余额</span>
+        <span class="liquidity-value br-value" id="br-balance">--</span>
+      </div>
+      <div class="liquidity-row">
+        <span class="token-icon usdt">💵</span>
+        <span class="liquidity-label usdt-label">USDT 余额</span>
+        <span class="liquidity-value usdt-value" id="usdt-balance">--</span>
+      </div>
+      <div class="liquidity-row">
+        <span class="token-icon price">💲</span>
+        <span class="liquidity-label price-label">BR 当前价格</span>
+        <span class="liquidity-value price-value" id="br-price">--</span>
+      </div>
+      <div class="liquidity-row">
+        <span class="token-icon total">📊</span>
+        <span class="liquidity-label total-label">流动性总额</span>
+        <span class="liquidity-value total-value" id="total-liquidity">--</span>
+      </div>
+      <div class="liquidity-refresh-tip">自动每30秒刷新 · 可手动点击刷新</div>
+    </div>
+    <div class="footer">数据来源：链上实时 | 设计灵感来自 SuperSkr</div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    const liquidityValue = document.getElementById('liquidity-value');
+    let timer = null;
+
+    // PancakeSwap V3 Pool ABI
+    const V3_POOL_ABI = [
+      "function liquidity() view returns (uint128)",
+      "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)",
+      "function token0() view returns (address)",
+      "function token1() view returns (address)"
+    ];
+    const V3_POOL_ADDRESS = "0x380aaDF63D84D3A434073F1d5d95f02fB23d5228";
+
+    const ERC20_ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function decimals() view returns (uint8)",
+      "function symbol() view returns (string)"
+    ];
+
+    async function fetchV3TokenBalances() {
+      try {
+        const brElem = document.getElementById('br-balance');
+        const usdtElem = document.getElementById('usdt-balance');
+        const priceElem = document.getElementById('br-price');
+        const totalElem = document.getElementById('total-liquidity');
+        brElem.classList.add('refreshing');
+        usdtElem.classList.add('refreshing');
+        priceElem.classList.add('refreshing');
+        totalElem.classList.add('refreshing');
+        const provider = new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
+        const pool = new ethers.Contract(V3_POOL_ADDRESS, V3_POOL_ABI, provider);
+        // 获取token0、token1、slot0
+        const [token0, token1, slot0] = await Promise.all([
+          pool.token0(),
+          pool.token1(),
+          pool.slot0()
+        ]);
+        // 获取symbol和decimals
+        const token0Contract = new ethers.Contract(token0, ERC20_ABI, provider);
+        const token1Contract = new ethers.Contract(token1, ERC20_ABI, provider);
+        const [symbol0, decimals0, symbol1, decimals1] = await Promise.all([
+          token0Contract.symbol(),
+          token0Contract.decimals(),
+          token1Contract.symbol(),
+          token1Contract.decimals()
+        ]);
+        // 获取余额
+        const [balance0, balance1] = await Promise.all([
+          token0Contract.balanceOf(V3_POOL_ADDRESS),
+          token1Contract.balanceOf(V3_POOL_ADDRESS)
+        ]);
+        // 格式化余额
+        function formatAmount(amount, decimals) {
+          const num = parseFloat(ethers.utils.formatUnits(amount, decimals));
+          if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+          if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+          if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+          return num.toFixed(2);
+        }
+        const brStr = `${formatAmount(balance0, decimals0)} ${symbol0}`;
+        const usdtStr = `${formatAmount(balance1, decimals1)} ${symbol1}`;
+        brElem.textContent = brStr;
+        usdtElem.textContent = usdtStr;
+        // 计算BR价格（USDT计价）
+        // slot0.sqrtPriceX96: Q64.96格式
+        const sqrtPriceX96 = BigInt(slot0[0]);
+        const Q192 = 2n ** 192n;
+        let brPrice = null;
+        if (symbol0 === 'BR' && symbol1 === 'USDT') {
+          // price = (sqrtPriceX96^2 / 2^192) * (10^decimals1 / 10^decimals0)
+          const priceX96 = (sqrtPriceX96 * sqrtPriceX96 * 10n ** BigInt(decimals1)) / (Q192 * 10n ** BigInt(decimals0));
+          brPrice = Number(priceX96.toString());
+        } else if (symbol1 === 'BR' && symbol0 === 'USDT') {
+          const priceX96 = (sqrtPriceX96 * sqrtPriceX96 * 10n ** BigInt(decimals0)) / (Q192 * 10n ** BigInt(decimals1));
+          brPrice = 1 / Number(priceX96.toString());
+        } else {
+          brPrice = null;
+        }
+        let brPriceStr = '--';
+        if (brPrice && !isNaN(brPrice)) {
+          brPriceStr = brPrice > 1e-3 ? brPrice.toFixed(6) : brPrice.toExponential(2);
+        }
+        priceElem.textContent = brPriceStr + ' USDT';
+        // 计算流动性总额
+        let total = null;
+        if (brPrice && !isNaN(brPrice)) {
+          const brNum = parseFloat(ethers.utils.formatUnits(balance0, decimals0));
+          const usdtNum = parseFloat(ethers.utils.formatUnits(balance1, decimals1));
+          if (symbol0 === 'BR') {
+            total = usdtNum + brNum * brPrice;
+          } else {
+            total = brNum + usdtNum * brPrice;
+          }
+        }
+        let totalStr = '--';
+        if (total && !isNaN(total)) {
+          if (total >= 1e9) totalStr = (total / 1e9).toFixed(2) + 'B USDT';
+          else if (total >= 1e6) totalStr = (total / 1e6).toFixed(2) + 'M USDT';
+          else if (total >= 1e3) totalStr = (total / 1e3).toFixed(2) + 'K USDT';
+          else totalStr = total.toFixed(2) + ' USDT';
+        }
+        totalElem.textContent = totalStr;
+        // 控制台打印
+        console.log('token0:', token0, symbol0, 'balance:', balance0.toString());
+        console.log('token1:', token1, symbol1, 'balance:', balance1.toString());
+        console.log('slot0:', slot0);
+        console.log('BR价格:', brPriceStr);
+        console.log('流动性总额:', totalStr);
+      } catch (e) {
+        document.getElementById('br-balance').textContent = '--';
+        document.getElementById('usdt-balance').textContent = '--';
+        document.getElementById('br-price').textContent = '--';
+        document.getElementById('total-liquidity').textContent = '--';
+        console.error('获取V3池子余额或价格出错:', e);
+      } finally {
+        const brElem = document.getElementById('br-balance');
+        const usdtElem = document.getElementById('usdt-balance');
+        const priceElem = document.getElementById('br-price');
+        const totalElem = document.getElementById('total-liquidity');
+        brElem && brElem.classList.remove('refreshing');
+        usdtElem && usdtElem.classList.remove('refreshing');
+        priceElem && priceElem.classList.remove('refreshing');
+        totalElem && totalElem.classList.remove('refreshing');
+      }
+    }
+
+    function startAutoRefresh() {
+      fetchV3TokenBalances();
+      timer = setInterval(fetchV3TokenBalances, 30000); // 每30秒刷新一次
+    }
+
+    startAutoRefresh();
+
+    // 主题切换
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    function setTheme(mode) {
+      if (mode === 'light') {
+        document.body.classList.add('light');
+        themeIcon.textContent = '☀️';
+      } else {
+        document.body.classList.remove('light');
+        themeIcon.textContent = '🌙';
+      }
+      localStorage.setItem('theme', mode);
+    }
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.classList.contains('light');
+      setTheme(isLight ? 'dark' : 'light');
+    });
+    // 初始化主题
+    (function(){
+      const saved = localStorage.getItem('theme');
+      if(saved === 'light') setTheme('light');
+      else setTheme('dark');
+    })();
+
+    // 刷新按钮事件
+    document.getElementById('refresh-btn').onclick = function() {
+      fetchV3TokenBalances();
+    };
+  </script>
+</body>
+</html>
