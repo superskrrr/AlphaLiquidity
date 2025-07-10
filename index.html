@@ -353,13 +353,16 @@
         const sqrtPriceX96 = BigInt(slot0[0]);
         const Q192 = 2n ** 192n;
         let brPrice = null;
-        if (symbol0 === 'BR' && symbol1 === 'USDT') {
-          // price = (sqrtPriceX96^2 / 2^192) * (10^decimals1 / 10^decimals0)
-          const priceX96 = (sqrtPriceX96 * sqrtPriceX96 * 10n ** BigInt(decimals1)) / (Q192 * 10n ** BigInt(decimals0));
-          brPrice = Number(priceX96.toString());
-        } else if (symbol1 === 'BR' && symbol0 === 'USDT') {
-          const priceX96 = (sqrtPriceX96 * sqrtPriceX96 * 10n ** BigInt(decimals0)) / (Q192 * 10n ** BigInt(decimals1));
-          brPrice = 1 / Number(priceX96.toString());
+        // 自动适配token0/token1顺序
+        if ((symbol0 === 'BR' && symbol1 === 'USDT') || (symbol0 === 'USDT' && symbol1 === 'BR')) {
+          const priceX96 = (sqrtPriceX96 * sqrtPriceX96 * 10n ** 18n) / Q192;
+          let price;
+          if (symbol0 === 'BR') {
+            price = Number(priceX96.toString()) / (10 ** (18 + decimals0 - decimals1));
+          } else {
+            price = (10 ** (18 + decimals1 - decimals0)) / Number(priceX96.toString());
+          }
+          brPrice = price;
         } else {
           brPrice = null;
         }
@@ -413,7 +416,7 @@
 
     function startAutoRefresh() {
       fetchV3TokenBalances();
-      timer = setInterval(fetchV3TokenBalances, 30000); // 每30秒刷新一次
+      timer = setInterval(fetchV3TokenBalances, 10000); // 每30秒刷新一次
     }
 
     startAutoRefresh();
